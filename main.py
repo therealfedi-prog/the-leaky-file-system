@@ -16,7 +16,7 @@ def calculate_file(filepath):
 
 
 def valid_extension(filename):
-    allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
 
     if '.' in filename:
         extension = filename[filename.find("."):].lower()
@@ -99,4 +99,5 @@ def handle_file_upload(file_path, original_filename):
         'hash': file_hash,
         'filename': original_filename
     }
+
 
