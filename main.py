@@ -4,14 +4,16 @@ import time
 import json
 from datetime import datetime, timedelta
 
+
 def calculate_file(filepath):
     sha256_hash = hashlib.sha256()
-    f = open (filepath, 'rb')
+    f = open(filepath, 'rb')
     while True:
         chunk = f.read(4096)
         if not chunk:
             break
         sha256_hash.update(chunk)
+    f.close()  # FIX: Close the file
     return sha256_hash.hexdigest()
 
 
@@ -19,21 +21,27 @@ def valid_extension(filename):
     allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
 
     if '.' in filename:
-        extension = filename[filename.find("."):].lower()
+        # FIX: Use rfind to get LAST dot, not first (handles names like "photo.backup.png")
+        extension = filename[filename.rfind("."):].lower()
         return extension in allowed
     return False
+
 
 def valid_size(filename):
     max_vol = 5 * 1024 * 1024
     return os.path.getsize(filename) <= max_vol
 
-def cleanup_old_files(filename):
-    os.listdir(filename)
-    creation_time = os.path.getctime(filename)
-    daytime = 24*60*60
-    current_time = time.time()
-    if current_time - creation_time > daytime:
-        os.remove(filename)
+
+def cleanup_old_files(directory):  # FIX: Should be directory, not filename
+    for filename in os.listdir(directory):  # FIX: Need to iterate through files
+        filepath = os.path.join(directory, filename)  # FIX: Get full path
+        if os.path.isfile(filepath):  # FIX: Only process files
+            creation_time = os.path.getctime(filepath)
+            daytime = 24 * 60 * 60
+            current_time = time.time()
+            if current_time - creation_time > daytime:
+                os.remove(filepath)
+
 
 def save_file_metadata(file_hash, original_name, file_size, metadata_file='files.json'):
     if os.path.exists(metadata_file):
@@ -51,8 +59,10 @@ def save_file_metadata(file_hash, original_name, file_size, metadata_file='files
     }
     metadata[file_hash] = file_info
 
-    f = open(metadata_file, 'w')
-    json.dump(metadata, f)
+    # FIX: Use context manager and add indent for readable JSON
+    with open(metadata_file, 'w') as f:
+        json.dump(metadata, f, indent=2)
+
 
 def is_duplicate(file_hash, metadata_file='files.json'):
     if not os.path.exists(metadata_file):
@@ -60,12 +70,12 @@ def is_duplicate(file_hash, metadata_file='files.json'):
 
     with open(metadata_file, 'r') as f:
         metadata = json.load(f)
-    if file_hash in metadata:
-        return True
-    else:
-        return False
 
-#main code here :))))
+    # FIX: Simplified - just use 'in' operator
+    return file_hash in metadata
+
+
+# main code here :))))
 
 def handle_file_upload(file_path, original_filename):
     if not valid_extension(original_filename):
@@ -99,5 +109,3 @@ def handle_file_upload(file_path, original_filename):
         'hash': file_hash,
         'filename': original_filename
     }
-
-
